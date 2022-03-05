@@ -53,6 +53,7 @@ extern struct tm_binds tmb; //Structure with pointers to tm funcs
 
 extern int use_preferred_scscf_uri;
 extern str preferred_scscf_uri;
+extern str default_scscf_uri;
 
 int i_hash_size;
 i_hash_slot *i_hash_table = 0;
@@ -441,38 +442,44 @@ str take_scscf_entry(str call_id) {
 		    strncasecmp(l->call_id.s, call_id.s, call_id.len) == 0) {
 		scscf_entry = l->list;
 		while (scscf_entry) {
-		    LM_DBG("scscf_entry [%.*s]\n", scscf_entry->scscf_name.len, scscf_entry->scscf_name.s);
-		    if (strncasecmp(scscf_entry->scscf_name.s, preferred_scscf_uri.s, preferred_scscf_uri.len) == 0) {
-			LM_DBG("scscf_entry matches\n");
-			scscf = scscf_entry->scscf_name;
+			LM_DBG("scscf_entry [%.*s]\n", scscf_entry->scscf_name.len, scscf_entry->scscf_name.s);
+			if (strncasecmp(scscf_entry->scscf_name.s, preferred_scscf_uri.s, preferred_scscf_uri.len) == 0) {
+				LM_DBG("scscf_entry matches\n");
+				scscf = scscf_entry->scscf_name;
+				break;
+			}
+			scscf_entry = scscf_entry->next;
+		}
+
+		break;
+		}
+		l = l->next;
+	}
+	}
+
+	// if scscf has not yet been set then find the first scscf that matches
+	if(scscf.len <= 0 ) {
+		LM_DBG("scscf has not been set so we just look for first match\n");
+		while (l) {
+			if (l->call_id.len == call_id.len &&
+				strncasecmp(l->call_id.s, call_id.s, call_id.len) == 0) {
+			if (l->list) {
+				LM_DBG("scscf_entry [%.*s]\n", l->list->scscf_name.len, l->list->scscf_name.s);
+				scscf = l->list->scscf_name;
+			}
 			break;
-		    }
-		    scscf_entry = scscf_entry->next;
+			}
+			l = l->next;
 		}
-		
-		break;
-	    }
-	    l = l->next;
 	}
-    }
-    
-    // if scscf has not yet been set then find the first scscf that matches
-    if(scscf.len <= 0 ) {
-	LM_DBG("scscf has not been set so we just look for first match\n");
-	while (l) {
-	    if (l->call_id.len == call_id.len &&
-		    strncasecmp(l->call_id.s, call_id.s, call_id.len) == 0) {
-		if (l->list) {
-		    LM_DBG("scscf_entry [%.*s]\n", l->list->scscf_name.len, l->list->scscf_name.s);
-		    scscf = l->list->scscf_name;
-		}
-		break;
-	    }
-	    l = l->next;
+
+	// if scscf has not yet been set then use the default one
+	if(scscf.len <= 0 && default_scscf_uri.len > 0){
+		LM_DBG("scscf has not been set so we use the default_scscf_uri\n");
+		scscf = default_scscf_uri;
 	}
-    }
-    i_unlock(hash);
-    return scscf;
+	i_unlock(hash);
+	return scscf;
 }
 
 int I_scscf_drop(struct sip_msg* msg, char* str1, char* str2) {

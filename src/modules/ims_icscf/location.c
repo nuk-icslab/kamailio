@@ -111,6 +111,7 @@ int I_perform_location_information_request(struct sip_msg* msg, char* route, cha
         return CSCF_RETURN_BREAK;
     }
     
+    LM_DBG("Public Identity: %.*s\n", public_identity.len, public_identity.s);
     
     //before we send lets suspend the transaction
     t = tmb.t_gett();

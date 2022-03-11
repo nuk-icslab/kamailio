@@ -53,7 +53,6 @@ extern struct tm_binds tmb; //Structure with pointers to tm funcs
 
 extern int use_preferred_scscf_uri;
 extern str preferred_scscf_uri;
-extern str default_scscf_uri;
 
 int i_hash_size;
 i_hash_slot *i_hash_table = 0;
@@ -471,12 +470,6 @@ str take_scscf_entry(str call_id) {
 			}
 			l = l->next;
 		}
-	}
-
-	// if scscf has not yet been set then use the default one
-	if(scscf.len <= 0 && default_scscf_uri.len > 0){
-		LM_DBG("scscf has not been set so we use the default_scscf_uri\n");
-		scscf = default_scscf_uri;
 	}
 	i_unlock(hash);
 	return scscf;

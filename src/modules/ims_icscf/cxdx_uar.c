@@ -52,6 +52,7 @@
 #include "registration.h"
 #include "ims_icscf_mod.h"
 
+extern str default_scscf_uri;
 
 //we use pseudo variables to communicate back to config file this takes the result and converys to a return code, publishes it a pseudo variable
 int create_uaa_return_code(int result) {
@@ -208,10 +209,16 @@ success:
     list = I_get_capab_ordered(server_name, m_capab, m_capab_cnt, o_capab, o_capab_cnt, p_server_names, p_server_names_cnt, 0);
 
     if (!list) {
-        LM_ERR("Empty capability list returning 600\n");
-        cscf_reply_transactional_async(t, t->uas.request, 600, MSG_600_EMPTY_LIST);
-        result = CSCF_RETURN_FALSE;
-        goto done;
+        // Use the default S-CSCF if Server-Capabilities is missing
+        if(default_scscf_uri.len > 0){
+            LM_INFO("Empty capability list. Use the default_scscf_uri\n");
+            list = new_scscf_entry(default_scscf_uri, INT_MAX, 0);
+        }else{
+            LM_ERR("Empty capability list returning 600\n");
+            cscf_reply_transactional_async(t, t->uas.request, 600, MSG_600_EMPTY_LIST);
+            result = CSCF_RETURN_FALSE;
+            goto done;
+        }
     }
 
     if (!data->callid.len || !add_scscf_list(data->callid, list)) {
